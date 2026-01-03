@@ -1,0 +1,125 @@
+####################################
+# Flutter / Dart
+####################################
+.dart_tool/
+.packages
+.pub/
+.pub-cache/
+build/
+flutter_*.log
+
+# Generated Dart files
+*.g.dart
+*.freezed.dart
+*.mocks.dart
+
+####################################
+# Flutter Platforms
+####################################
+# Android
+android/.gradle/
+android/local.properties
+android/key.properties
+*.apk
+*.aab
+
+# iOS / macOS
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/ephemeral/
+ios/Flutter/App.framework
+ios/Flutter/Flutter.framework
+ios/Flutter/Generated.xcconfig
+ios/Flutter/Flutter.podspec
+ios/Runner/GeneratedPluginRegistrant.*
+
+macos/Pods/
+macos/Flutter/ephemeral/
+macos/Flutter/GeneratedPluginRegistrant.swift
+
+# Windows / Linux
+windows/flutter/ephemeral/
+linux/flutter/ephemeral/
+
+####################################
+# Python
+####################################
+__pycache__/
+*.py[cod]
+*.pyd
+*.so
+*.egg-info/
+dist/
+build/
+
+####################################
+# Python Virtual Environments (CRITICAL)
+####################################
+venv/
+.env/
+.env*/
+ENV/
+env/
+
+# Backend virtualenv (your issue)
+backend/**/Lib/
+backend/**/Scripts/
+backend/**/Include/
+backend/**/pyvenv.cfg
+backend/**/site-packages/
+
+####################################
+# Machine Learning / Large Binaries
+####################################
+*.whl
+*.dll
+*.dylib
+*.pkl
+*.h5
+*.onnx
+*.pt
+*.pth
+
+####################################
+# Logs
+####################################
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+####################################
+# IDEs
+####################################
+.idea/
+.vscode/
+*.iml
+
+####################################
+# OS
+####################################
+.DS_Store
+Thumbs.db
+desktop.ini
+
+####################################
+# Environment / Secrets
+####################################
+.env
+.env.*
+*.key
+*.pem
+*.crt
+
+####################################
+# Firebase (optional)
+####################################
+google-services.json
+GoogleService-Info.plist
+
+####################################
+# Misc
+####################################
+coverage/
+.cache/

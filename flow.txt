@@ -1,0 +1,46 @@
+flutter run
+    ↓
+lib/main.dart
+    ↓
+main() → runApp(const DurianDetectApp())
+    ↓
+DurianDetectApp (MaterialApp)
+    ↓
+home: const MainNavigationPage()
+    ↓
+lib/main_navigation.dart
+    ↓
+MainNavigationPage (StatefulWidget)
+    ↓
+    Manages _selectedIndex (default: 0)
+    ↓
+    Initial display: _screens[0]
+    ↓
+┌─────────────────────────────────────────────┐
+│         lib/screens/home_screen.dart         │ ← App starts here
+└─────────────────────────────────────────────┘
+         ↑                    ↓
+         │              (user taps tabs)
+         │                    ↓
+    [Back to home]    ┌───────────────────┐
+                      │   Bottom NavBar   │
+                      └───────────────────┘
+                      ↙            ↘
+        Tab 0 (Home)          Tab 1 (Camera)
+        HomeScreen            CameraScreen
+        [index=0]             [index=1]
+                              
+                                ↓
+                              (user takes photo)
+                                ↓
+                    lib/services/ml_service.dart
+                    (calls backend server)
+                                ↓
+                    lib/screens/result_screen.dart
+                    (displays results)
+                                ↓
+                    (back button → CameraScreen)
+                    ↙
+        Tab 2 (History)
+        HistoryScreen
+        [index=2]

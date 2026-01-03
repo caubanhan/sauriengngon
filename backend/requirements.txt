@@ -1,0 +1,9 @@
+torch>=2.6.0
+torchvision
+transformers
+Pillow
+numpy
+fastapi
+uvicorn[standard]
+pydantic
+tensorflow
