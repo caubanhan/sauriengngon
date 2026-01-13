@@ -25,9 +25,11 @@ class _CameraScreenState extends State<CameraScreen> {
         setState(() => _image = file);
         
         try {
-          print('🔬 Sending image to backend...');
+          // OFFLINE INFERENCE: Run TensorFlow Lite model on device
+          // No API calls or network requests - all processing is local
+          print('🔬 Starting local inference...');
           final result = await MLService.detectDisease(file);
-          print('✅ Backend response: $result');
+          print('✅ Inference complete: ${result['top_prediction']}');
           
           if (mounted) {
             Navigator.push(
@@ -36,11 +38,12 @@ class _CameraScreenState extends State<CameraScreen> {
             );
           }
         } catch (e) {
-          print('❌ Backend error: $e');
+          // Offline inference errors (no network timeout issues)
+          print('❌ Inference error: $e');
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('Backend error: $e'),
+                content: Text('Inference error: $e'),
                 backgroundColor: Colors.red,
               ),
             );
@@ -70,9 +73,10 @@ class _CameraScreenState extends State<CameraScreen> {
       await tempFile.writeAsBytes(bytes, flush: true);
       setState(() => _image = tempFile);
       
-      print('🔬 Sending sample image to backend...');
+      // OFFLINE INFERENCE: Run on sample image
+      print('🔬 Starting local inference on sample image...');
       final result = await MLService.detectDisease(tempFile);
-      print('✅ Backend response: $result');
+      print('✅ Inference complete: ${result['top_prediction']}');
       
       if (mounted) {
         Navigator.push(
@@ -81,11 +85,11 @@ class _CameraScreenState extends State<CameraScreen> {
         );
       }
     } catch (e) {
-      print('❌ Fallback error: $e');
+      print('❌ Inference error on sample: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to load sample image: $e'),
+            content: Text('Failed to process sample image: $e'),
             backgroundColor: Colors.red,
           ),
         );

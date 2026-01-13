@@ -578,16 +578,21 @@ class TensorFlowService {
 
   /// Format label for display
   static String _formatLabel(String label) {
-    // Convert "Apple___Apple_scab" to "Apple Scab"
-    return label
-        .split('___')
-        .last
-        .replaceAll('_', ' ')
-        .split(' ')
-        .map((word) => word.isNotEmpty
-            ? '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}'
-            : '')
-        .join(' ');
+    // For Vietnamese labels, return as-is (they're already properly formatted)
+    // For English labels like "Apple___Apple_scab", convert to "Apple Scab"
+    if (label.contains('___')) {
+      return label
+          .split('___')
+          .last
+          .replaceAll('_', ' ')
+          .split(' ')
+          .map((word) => word.isNotEmpty
+              ? '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}'
+              : '')
+          .join(' ');
+    }
+    // Return Vietnamese labels unchanged
+    return label;
   }
 
   /// Get model labels
