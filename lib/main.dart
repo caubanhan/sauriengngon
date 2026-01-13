@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
 import 'main_navigation.dart';
+import 'models/tensorflow_service.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize TensorFlow Lite model on app startup
+  await TensorFlowService.initialize();
+  
   runApp(const DurianDetectApp());
 }
 

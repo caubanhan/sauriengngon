@@ -1,79 +1,116 @@
 import 'dart:io';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:flutter/foundation.dart';
+import '../models/tensorflow_service.dart';
 
-/*
-Prepare HTTP POST request
-Add headers:
-Authorization (your API key)
-Content-Type: image format or octet-stream
-Attach image bytes
-Send request to model endpoint
-Receive JSON response
-Extract:
-top predicted label
-confidence score
- */
+/// ML Service for Plant Disease Detection
+/// 
+/// REFACTORED FOR OFFLINE INFERENCE:
+/// This service now uses local TensorFlow Lite model instead of FastAPI backend.
+/// All inference runs on-device for privacy, speed, and offline capability.
+/// 
+/// Key changes:
+/// - ❌ REMOVED: HTTP requests to FastAPI backend
+/// - ✅ ADDED: Direct TensorFlow Lite inference via TensorflowService
+/// - ✅ IMAGE: Passed as file path to tensorflow_service
+/// - ✅ PREPROCESSING: Image resizing/normalization handled by TensorflowService
+/// - ✅ INFERENCE: Runs locally on device (CPU/GPU optimized)
 class MLService {
+  /// Detect plant diseases in captured image using local TFLite model
+  /// 
+  /// **Parameters:**
+  ///   - `image`: File object pointing to captured/selected image
+  /// 
+  /// **Returns:**
+  /// Map with structure matching previous API response:
+  /// ```dart
+  /// {
+  ///   'top_prediction': 'disease_name',     // Most confident prediction
+  ///   'confidence': 0.95,                   // Confidence 0.0-1.0
+  ///   'all_predictions': [                  // All 38 disease classes
+  ///     {'label': 'disease1', 'confidence': 0.95},
+  ///     {'label': 'disease2', 'confidence': 0.03},
+  ///     ...
+  ///   ]
+  /// }
+  /// ```
+  /// 
+  /// **Error Handling:**
+  /// - Model not available → returns demo results with actual labels
+  /// - Invalid image → throws exception with detailed error
+  /// - Service not initialized → returns error state
   static Future<Map<String, dynamic>> detectDisease(File image) async {
-    // Local Python backend API endpoint
-    // For Android emulator: use 10.0.2.2
-    // For real device: replace with your PC's IP address (run 'ipconfig' to find it)
-    final uri = Uri.parse('http://10.0.2.2:5000/predict');
+    // STEP 1: Validate input file exists
+    if (!await image.exists()) {
+      throw ArgumentError('Image file not found: ${image.path}');
+    }
 
-    // Read file bytes
-    final bytes = await image.readAsBytes();
-    
-    // Base64-encode with data URI prefix
-    final base64Data = base64Encode(bytes);
-    final pathLower = image.path.toLowerCase();
-    final isPng = pathLower.endsWith('.png');
-    final mime = isPng ? 'image/png' : 'image/jpeg';
-    final dataUri = 'data:$mime;base64,$base64Data';
-
-    final payload = jsonEncode({'image': dataUri});
+    debugPrint('🔬 Starting offline inference on: ${image.path}');
 
     try {
-      final response = await http.post(
-        uri,
-        headers: {'Content-Type': 'application/json'},
-        body: payload,
-      ).timeout(const Duration(seconds: 60));
-
-      if (response.statusCode != 200) {
-        throw HttpException('Prediction failed: ${response.statusCode}\n${response.body}');
+      // STEP 2: Ensure TensorFlow service is initialized (lazy-init fallback)
+      if (!TensorFlowService.isInitialized) {
+        await TensorFlowService.initialize();
+      }
+      if (!TensorFlowService.isInitialized) {
+        throw Exception('TensorFlow service not initialized after retry');
       }
 
-      final dynamic decoded = json.decode(response.body);
-      
-      // Parse response from newserver.py:
+      // STEP 3: Run local inference
+      // TensorflowService.analyzeImage() handles:
+      //   - Image file reading
+      //   - Resizing to [224, 224] 
+      //   - RGB conversion
+      //   - Normalization (0-255 range)
+      //   - TFLite inference
+      //   - Softmax post-processing
+      final analysisResult = await TensorFlowService.analyzeImage(image.path);
+
+      // STEP 4: Check if analysis was successful
+      if (analysisResult['success'] != true) {
+        throw Exception('Inference failed: ${analysisResult['error']}');
+      }
+
+      // STEP 5: Extract inference results
+      final data = analysisResult['data'] as Map<String, dynamic>;
+
+      // STEP 6: Transform results to match previous API format
+      // Previous format expected by ResultScreen:
       // {
-      //   "top_prediction": "disease_name",
-      //   "confidence": 0.95,
-      //   "all_predictions": [
-      //     {"label": "disease1", "confidence": 0.95},
-      //     {"label": "disease2", "confidence": 0.03},
-      //     ...
-      //   ]
+      //   'top_prediction': string (disease name),
+      //   'confidence': double (0.0-1.0),
+      //   'all_predictions': List of {'label': string, 'confidence': double}
       // }
-      
-      final topPrediction = decoded['top_prediction'];
-      final confidence = decoded['confidence'];
-      final allPredictions = decoded['all_predictions'];
 
-      if (topPrediction is String && confidence is num && allPredictions is List) {
-        return {
-          'top_prediction': topPrediction,
-          'confidence': (confidence as num).toDouble(),
-          'all_predictions': allPredictions,
-        };
-      }
+      final topPrediction = data['topPrediction'] as Map<String, dynamic>?;
+      final predictions = data['predictions'] as List<dynamic>? ?? [];
 
-      throw HttpException('Unexpected response format: ${response.body}');
+      // Convert predictions to expected format
+      final allPredictions = predictions
+          .map((pred) => {
+                'label': pred['displayName'] ?? pred['label'] ?? 'Unknown',
+                'confidence': (pred['confidence'] as num?)?.toDouble() ?? 0.0,
+              })
+          .toList();
+
+      // Build result response matching previous API structure
+      final result = {
+        'top_prediction': topPrediction?['displayName'] ?? 
+                          topPrediction?['label'] ?? 
+                          'Unknown',
+        'confidence': (topPrediction?['confidence'] as num?)?.toDouble() ?? 0.0,
+        'all_predictions': allPredictions,
+      };
+
+      debugPrint('✅ Local inference complete: ${result['top_prediction']}');
+      debugPrint('   Confidence: ${(result['confidence'] * 100).toStringAsFixed(1)}%');
+      debugPrint('   Method: ${analysisResult['analysisMethod']}');
+
+      return result;
     } catch (e) {
-      if (e is HttpException) rethrow;
-      throw HttpException('Error calling backend: $e');
+      debugPrint('❌ Local inference failed: $e');
+      rethrow;
     }
   }
 }
+
 

@@ -30,10 +30,17 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  
+  # Image Processing & Resizing
+  image: ^4.1.0
+  
+  # TensorFlow Lite ML Inference (upgraded for newer model support)
+  tflite_flutter: ^0.12.0
+  
+  # Camera & Image Selection from Gallery
   image_picker: ^1.0.4
-
-  # The following adds the Cupertino Icons font to your application.
-  # Use with the CupertinoIcons class for iOS style icons.
+  
+  # Material Design Icons
   cupertino_icons: ^1.0.8
 
 dev_dependencies:
@@ -89,6 +96,7 @@ flutter:
     - assets/Rhizoctonia/2.jpg
     - assets/Rhizoctonia/3.jpg
 
+    - assets/models/model.tflite
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
